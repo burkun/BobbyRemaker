@@ -1,8 +1,8 @@
 // game/assets/core/entity/LevelMap.ts
 
 import { Cell, createCell, createEmptyCell } from './Cell';
-import { createTile } from './Tile';
-import { createObject } from './GameObj';
+import { createTile, Tile } from './Tile';
+import { createObject, GameObj } from './GameObj';
 import { TileType, ObjectType, Direction } from '../types';
 
 export interface LevelMap {
@@ -22,10 +22,10 @@ export function createEmptyMap(width: number, height: number): LevelMap {
   return { width, height, cells };
 }
 
-export function createMapFromArray(width: number, height: number, tiles: number[][], objects: number[][]): LevelMap {
+export function createMapFromArray(width: number, height: number, tiles: number[][]): LevelMap {
   const map = createEmptyMap(width, height);
   // 简化版本：根据数值映射类型
-  // 后续会扩展完整的映射
+  // TODO: 后续会扩展完整的映射，包括对象(objects)的处理
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       if (tiles[y] && tiles[y][x] !== undefined && tiles[y][x] !== 0) {
@@ -43,13 +43,13 @@ export function getCell(map: LevelMap, x: number, y: number): Cell | null {
   return map.cells[y][x];
 }
 
-export function setTile(map: LevelMap, x: number, y: number, tile: LevelMap['cells'][0][0]['tile']): void {
+export function setTile(map: LevelMap, x: number, y: number, tile: Tile | null): void {
   if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
     map.cells[y][x].tile = tile;
   }
 }
 
-export function setObject(map: LevelMap, x: number, y: number, obj: LevelMap['cells'][0][0]['object']): void {
+export function setObject(map: LevelMap, x: number, y: number, obj: GameObj | null): void {
   if (x >= 0 && x < map.width && y >= 0 && y < map.height) {
     map.cells[y][x].object = obj;
   }

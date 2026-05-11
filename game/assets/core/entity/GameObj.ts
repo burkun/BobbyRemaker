@@ -1,6 +1,6 @@
 // game/assets/core/entity/GameObj.ts
 
-import { ObjectType } from '../types';
+import { ObjectType, COLLECTIBLE_OBJECTS } from '../types';
 
 export interface GameObj {
   type: ObjectType;
@@ -13,6 +13,5 @@ export function createObject(type: ObjectType, state?: number, visible: boolean 
 }
 
 export function isCollectible(obj: GameObj | null): boolean {
-  if (obj === null) return false;
-  return obj.type === 'carrot' || obj.type === 'seed' || obj.type === 'flight';
+  return obj !== null && COLLECTIBLE_OBJECTS.includes(obj.type);
 }

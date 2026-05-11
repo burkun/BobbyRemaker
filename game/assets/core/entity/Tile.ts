@@ -1,6 +1,6 @@
 // game/assets/core/entity/Tile.ts
 
-import { TileType, Direction } from '../types';
+import { TileType, Direction, WALKABLE_TILES } from '../types';
 
 export interface Tile {
   type: TileType;
@@ -13,6 +13,5 @@ export function createTile(type: TileType, direction?: Direction, state?: number
 }
 
 export function isWalkable(tile: Tile | null): boolean {
-  if (tile === null) return false;
-  return tile.type !== 'water' && tile.type !== 'wall';
+  return tile !== null && WALKABLE_TILES.includes(tile.type);
 }

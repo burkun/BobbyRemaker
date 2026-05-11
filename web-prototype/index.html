@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Bobby Carrot 5 - 复刻版</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Press Start 2P', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #eee;
+      touch-action: none;
+      overflow: hidden;
+    }
+
+    #game-container {
+      position: relative;
+      width: 320px;
+      height: 480px;
+      background: #0a0a1a;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 30px rgba(0,0,0,0.8), 0 0 60px rgba(65,105,225,0.3);
+    }
+
+    #title-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, #1e3a5f 0%, #0d1b2a 100%);
+      z-index: 100;
+    }
+
+    #title-screen.hidden {
+      display: none;
+    }
+
+    #title-logo {
+      margin-bottom: 20px;
+    }
+
+    #title-text {
+      font-size: 16px;
+      color: #ffd700;
+      text-shadow: 2px 2px #000;
+      margin-bottom: 40px;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    #start-button {
+      padding: 15px 40px;
+      font-size: 14px;
+      background: linear-gradient(180deg, #4CAF50 0%, #2E7D32 100%);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      text-shadow: 1px 1px #000;
+      box-shadow: 0 4px 0 #1B5E20;
+      transition: all 0.1s;
+    }
+
+    #start-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #1B5E20;
+    }
+
+    #start-button:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #1B5E20;
+    }
+
+    #game-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: none;
+      flex-direction: column;
+    }
+
+    #game-screen.active {
+      display: flex;
+    }
+
+    #hud-container {
+      height: 40px;
+      background: linear-gradient(180deg, #2d2d4a 0%, #1a1a2e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-bottom: 2px solid #3a3a5a;
+    }
+
+    #hud-level {
+      color: #ffd700;
+      font-size: 12px;
+    }
+
+    #hud-carrots {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    #hud-carrot-icon {
+      width: 16px;
+      height: 16px;
+      background: #ff6b35;
+      border-radius: 50% 50% 40% 40%;
+    }
+
+    #hud-carrot-count {
+      color: #fff;
+      font-size: 12px;
+    }
+
+    #canvas-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0f0f1a;
+    }
+
+    #gameCanvas {
+      border: none;
+    }
+
+    #loading-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0a0a1a;
+      z-index: 200;
+    }
+
+    #loading-screen.hidden {
+      display: none;
+    }
+
+    #loading-text {
+      color: #ffd700;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    #loading-bar {
+      width: 200px;
+      height: 8px;
+      background: #2a2a4a;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    #loading-progress {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #8BC34A);
+      transition: width 0.3s;
+    }
+
+    #instructions {
+      margin-top: 15px;
+      text-align: center;
+      color: #888;
+      font-size: 10px;
+    }
+
+    .key {
+      display: inline-block;
+      background: #333;
+      padding: 3px 6px;
+      border-radius: 3px;
+      margin: 1px;
+      font-size: 10px;
+    }
+
+    #virtual-pad {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      width: 100px;
+      height: 100px;
+      display: none;
+      opacity: 0.7;
+    }
+
+    #virtual-pad.visible {
+      display: block;
+    }
+
+    .pad-btn {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: rgba(255,255,255,0.3);
+      border: 2px solid rgba(255,255,255,0.5);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: white;
+      cursor: pointer;
+      touch-action: none;
+    }
+
+    #pad-up { top: 5px; left: 35px; }
+    #pad-down { bottom: 5px; left: 35px; }
+    #pad-left { top: 35px; left: 5px; }
+    #pad-right { top: 35px; right: 5px; }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <!-- 加载画面 -->
+    <div id="loading-screen">
+      <div id="loading-text">加载素材...</div>
+      <div id="loading-bar">
+        <div id="loading-progress"></div>
+      </div>
+    </div>
+
+    <!-- 标题画面 -->
+    <div id="title-screen" class="hidden">
+      <div id="title-logo">
+        <img id="logo-img" width="150" height="340" style="display:none">
+      </div>
+      <div id="title-text">Bobby Carrot 5</div>
+      <button id="start-button">开始游戏</button>
+    </div>
+
+    <!-- 游戏画面 -->
+    <div id="game-screen">
+      <div id="hud-container">
+        <div id="hud-level">关卡 1-1</div>
+        <div id="hud-carrots">
+          <div id="hud-carrot-icon"></div>
+          <span id="hud-carrot-count">0 / 3</span>
+        </div>
+      </div>
+      <div id="canvas-container">
+        <canvas id="gameCanvas" width="320" height="256"></canvas>
+      </div>
+      <!-- 虚拟方向键 -->
+      <div id="virtual-pad">
+        <div class="pad-btn" id="pad-up">↑</div>
+        <div class="pad-btn" id="pad-down">↓</div>
+        <div class="pad-btn" id="pad-left">←</div>
+        <div class="pad-btn" id="pad-right">→</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="instructions">
+    <p>使用 <span class="key">↑</span><span class="key">↓</span><span class="key">←</span><span class="key">→</span> 或 <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> 移动</p>
+    <p>移动端：滑动屏幕或点击虚拟方向键</p>
+  </div>
+
+  <script type="module" src="./src/game.ts"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+{
+  "id": 1,
+  "packId": 1,
+  "name": "Level 1-1",
+  "width": 10,
+  "height": 8,
+  "cells": [
+    [
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null }
+    ],
+    [
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": { "type": "start" } },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null }
+    ],
+    [
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": { "type": "carrot" } },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null }
+    ],
+    [
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null }
+    ],
+    [
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": { "type": "carrot" } },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null }
+    ],
+    [
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null }
+    ],
+    [
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": { "type": "carrot" } },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": { "type": "door" } }
+    ],
+    [
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null },
+      { "tile": { "type": "ground" }, "object": null }
+    ]
+  ],
+  "target": {
+    "carrots": 3
+  },
+  "startPosition": {
+    "x": 1,
+    "y": 1
+  }
+}

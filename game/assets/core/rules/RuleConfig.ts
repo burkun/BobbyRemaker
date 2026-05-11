@@ -1,8 +1,6 @@
 // game/assets/core/rules/RuleConfig.ts
 
-import { Player } from '../entity';
-import { Tile } from '../entity/Tile';
-import { GameObj } from '../entity/GameObj';
+import { Player, Tile, GameObj } from '../entity';
 
 export type EffectType =
   | 'slide'        // 滑行
@@ -61,4 +59,10 @@ export function getObjectCollideEffects(rule: RuleConfig, obj: GameObj | null): 
   if (obj === null) return [];
   const objectRule = rule.objectRules[obj.type];
   return objectRule?.onCollide || [];
+}
+
+export function getTileLeaveEffects(rule: RuleConfig, tile: Tile | null): Effect[] {
+  if (tile === null) return [];
+  const tileRule = rule.tileRules[tile.type];
+  return tileRule?.onLeave || [];
 }

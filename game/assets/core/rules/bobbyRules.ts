@@ -1,4 +1,8 @@
 // game/assets/core/rules/bobbyRules.ts
+//
+// Note: 'tile.direction' is a placeholder string that should be resolved at runtime
+// to the tile's actual direction property. The game engine should replace this
+// placeholder with the concrete direction value when processing effects.
 
 import { RuleConfig } from './RuleConfig';
 
@@ -20,7 +24,7 @@ export const bobbyRules: RuleConfig = {
       onEnter: [{ type: 'forceMove', params: { direction: 'tile.direction' } }]
     },
     'death': {
-      canWalk: true,
+      canWalk: true,  // Player can enter the tile, but will die upon entering
       onEnter: [{ type: 'die' }]
     },
     'grass': {

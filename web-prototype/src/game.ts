@@ -6,14 +6,14 @@ import { CollectionSystem } from './systems/CollectionSystem';
 import { MovementSystem } from './systems/MovementSystem';
 import { loadGameAssets, GameAssets, AudioManager } from './assets';
 
-// 游戏常量
-const TILE_SIZE = 16; // J2ME原始尺寸
-const PLAYER_WIDTH = 16;
-const PLAYER_HEIGHT = 48;
+// 游戏常量 - 必须与原始J2ME游戏一致
+const TILE_SIZE = 32; // 原始tile尺寸
+const PLAYER_WIDTH = 32;  // 每帧宽度（精灵图每帧32宽）
+const PLAYER_HEIGHT = 48; // 完整精灵高度（包含脚部）
 const MOVE_DURATION = 200;
 const SCALE = 2; // 放大倍数
 
-// 关卡数据
+// 关卡数据接口
 interface LevelData {
   id: number;
   packId: number;
@@ -26,50 +26,6 @@ interface LevelData {
   }>>;
   startPosition: { x: number; y: number };
   target: { carrots: number };
-}
-
-// 测试关卡
-const TEST_LEVEL: LevelData = {
-  id: 1,
-  packId: 1,
-  name: "草地起点",
-  width: 20,
-  height: 12,
-  cells: generateTestLevel(),
-  startPosition: { x: 1, y: 1 },
-  target: { carrots: 3 }
-};
-
-function generateTestLevel(): LevelData['cells'] {
-  const cells: LevelData['cells'] = [];
-  for (let y = 0; y < 12; y++) {
-    cells[y] = [];
-    for (let x = 0; x < 20; x++) {
-      // 边界是墙
-      if (x === 0 || x === 19 || y === 0 || y === 11) {
-        cells[y][x] = { tile: { type: 'wall' }, object: null };
-      } else {
-        cells[y][x] = { tile: { type: 'ground' }, object: null };
-      }
-    }
-  }
-  // 起点标记
-  cells[1][1] = { tile: { type: 'ground' }, object: { type: 'start' } };
-  // 放置胡萝卜
-  cells[1][3] = { tile: { type: 'ground' }, object: { type: 'carrot' } };
-  cells[5][8] = { tile: { type: 'ground' }, object: { type: 'carrot' } };
-  cells[8][15] = { tile: { type: 'ground' }, object: { type: 'carrot' } };
-  // 放置门
-  cells[10][18] = { tile: { type: 'ground' }, object: { type: 'door' } };
-  // 添加一些障碍
-  cells[3][5] = { tile: { type: 'water' }, object: null };
-  cells[3][6] = { tile: { type: 'water' }, object: null };
-  cells[4][5] = { tile: { type: 'water' }, object: null };
-  cells[6][10] = { tile: { type: 'wall' }, object: null };
-  cells[6][11] = { tile: { type: 'wall' }, object: null };
-  cells[7][10] = { tile: { type: 'wall' }, object: null };
-
-  return cells;
 }
 
 export class Game {
@@ -96,6 +52,7 @@ export class Game {
   private animCounter: number = 0;
 
   private gameState: 'loading' | 'title' | 'playing' | 'complete' = 'loading';
+  private currentLevel: LevelData | null = null;
 
   constructor() {
     this.canvas = document.getElementById('gameCanvas') as HTMLCanvasElement;
@@ -120,7 +77,6 @@ export class Game {
     const loadingProgress = document.getElementById('loading-progress')!;
 
     try {
-      // 模拟加载进度
       loadingProgress.style.width = '30%';
       await new Promise(r => setTimeout(r, 200));
 
@@ -141,7 +97,6 @@ export class Game {
     const titleScreen = document.getElementById('title-screen')!;
     titleScreen.classList.remove('hidden');
 
-    // 显示logo
     if (this.assets) {
       const logoImg = document.getElementById('logo-img') as HTMLImageElement;
       logoImg.src = this.assets.logo.src;
@@ -150,12 +105,10 @@ export class Game {
   }
 
   private setupEventListeners(): void {
-    // 开始按钮
     document.getElementById('start-button')!.addEventListener('click', () => {
       this.startGame();
     });
 
-    // 键盘输入
     document.addEventListener('keydown', (e) => {
       if (this.gameState !== 'playing') return;
 
@@ -172,7 +125,6 @@ export class Game {
       }
     });
 
-    // 触摸输入
     let touchStartX = 0;
     let touchStartY = 0;
     const minSwipe = 30;
@@ -198,7 +150,6 @@ export class Game {
       }
     }, { passive: false });
 
-    // 虚拟方向键
     this.setupVirtualPad();
   }
 
@@ -227,13 +178,26 @@ export class Game {
     });
   }
 
-  private startGame(): void {
+  private async startGame(): void {
     document.getElementById('title-screen')!.classList.add('hidden');
     document.getElementById('game-screen')!.classList.add('active');
     this.gameState = 'playing';
 
-    this.loadLevel(TEST_LEVEL);
-    this.audioManager.playBGM('ingame1');
+    try {
+      this.currentLevel = await this.loadLevelData('/assets/levels/level-1-1.json');
+      this.loadLevel(this.currentLevel);
+      this.audioManager.playBGM('ingame1');
+    } catch (error) {
+      console.error('Failed to load level:', error);
+    }
+  }
+
+  private async loadLevelData(levelPath: string): Promise<LevelData> {
+    const response = await fetch(levelPath);
+    if (!response.ok) {
+      throw new Error(`Failed to load level: ${response.status}`);
+    }
+    return response.json();
   }
 
   private loadLevel(levelData: LevelData): void {
@@ -263,7 +227,6 @@ export class Game {
     this.targetCarrots = levelData.target.carrots;
     this.isLevelComplete = false;
 
-    // 调整画布大小
     this.canvas.width = levelData.width * TILE_SIZE * SCALE;
     this.canvas.height = levelData.height * TILE_SIZE * SCALE;
 
@@ -362,14 +325,16 @@ export class Game {
 
   private resetLevel(): void {
     setTimeout(() => {
-      this.loadLevel(TEST_LEVEL);
+      if (this.currentLevel) {
+        this.loadLevel(this.currentLevel);
+      }
       this.isMoving = false;
     }, 500);
   }
 
   private showCompleteScreen(): void {
     const hud = document.getElementById('hud-carrot-count')!;
-    hud.textContent = '🎉 关卡完成！';
+    hud.textContent = '关卡完成！';
   }
 
   private updateHUD(): void {
@@ -388,7 +353,6 @@ export class Game {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // 渲染地图
     for (let y = 0; y < this.levelMap.height; y++) {
       for (let x = 0; x < this.levelMap.width; x++) {
         const cell = this.levelMap.cells[y][x];
@@ -396,7 +360,6 @@ export class Game {
       }
     }
 
-    // 渲染对象
     for (let y = 0; y < this.levelMap.height; y++) {
       for (let x = 0; x < this.levelMap.width; x++) {
         const cell = this.levelMap.cells[y][x];
@@ -404,7 +367,6 @@ export class Game {
       }
     }
 
-    // 渲染玩家
     this.renderPlayer(ctx);
   }
 
@@ -419,7 +381,6 @@ export class Game {
       return;
     }
 
-    // 尝试使用tile sheet
     if (this.assets) {
       const tileIndex = this.getTileIndex(tile.type);
       const tileX = (tileIndex % 16) * TILE_SIZE;
@@ -433,7 +394,6 @@ export class Game {
       return;
     }
 
-    // Fallback colors
     const colors: Record<TileType, string> = {
       'ground': '#2d5a27',
       'ice': '#a8d8ea',
@@ -451,17 +411,36 @@ export class Game {
   }
 
   private getTileIndex(type: TileType): number {
-    // ts.png tile索引映射
+    // 精灵图索引映射 - 基于原始J2ME游戏的byte值（转无符号）
+    // ts.png是512x512，每行16个32x32 tile，共256个tile
+    // srcX = (tileValue % 16) * 32, srcY = (tileValue / 16) * 32
     const indices: Partial<Record<TileType, number>> = {
-      'ground': 0,
-      'water': 4,
-      'wall': 8,
-      'ice': 16,
-      'grass': 32,
-      'death': 48,
-      'portal': 64,
-      'arrow': 80,
-      'conveyer': 96
+      'ground': 100,        // 基础可行走地面（94-200范围内）
+      'wall': 0,            // 墙壁/障碍（不可行走）
+      'water': 77,          // 水域（不可行走，特殊检查）
+      'ice': 148,           // 冰面 TILE_ICE = -108 → 148
+      'grass': 199,         // 可割草地 TILE_GRASS_1 = -57 → 199
+      'death': 175,         // 死亡触发 TILE_DEATH_TRIGGER = -81 → 175
+      'portal': 166,        // 传送门 TILE_PORTAL_1 = -90 → 166
+      'arrow': 184,         // 箭头 TILE_ARROW_RIGHT = -72 → 184
+      'conveyer': 190       // 传送带 TILE_CONVEYOR_RIGHT = -66 → 190
+    };
+    return indices[type] ?? 100;
+  }
+
+  private getObjectIndex(type: ObjectType): number {
+    // J2ME对象byte值转无符号索引 - 与ts.png共用同一精灵图
+    // 索引直接对应ts.png位置：srcX = (index % 16) * 32, srcY = (index / 16) * 32
+    const indices: Partial<Record<ObjectType, number>> = {
+      'start': 149,      // TILE_SPAWN_POINT = -107 → 149
+      'carrot': 248,     // OBJECT_CARROT = -8 → 248
+      'door': 246,       // OBJECT_LEVEL_END = -10 → 246
+      'seed': 244,       // OBJECT_SEED = -12 → 244
+      'spring': 212,     // OBJECT_SPRING = -44 → 212
+      'flight': 245,     // OBJECT_FLIGHT_PICKUP = -11 → 245
+      'bonus': 205,      // OBJECT_BONUS_DOOR = -51 → 205
+      'rock': 240,       // 估计值
+      'mower': 237       // OBJECT_MOWER_PATH = -19 → 237
     };
     return indices[type] ?? 0;
   }
@@ -469,25 +448,24 @@ export class Game {
   private renderObject(ctx: CanvasRenderingContext2D, x: number, y: number, obj: GameObj | null): void {
     if (!obj || obj.visible === false) return;
 
-    const px = x * TILE_SIZE * SCALE + (TILE_SIZE * SCALE) / 2;
-    const py = y * TILE_SIZE * SCALE + (TILE_SIZE * SCALE) / 2;
+    const px = x * TILE_SIZE * SCALE;
+    const py = y * TILE_SIZE * SCALE;
 
-    // 尝试使用tile objects sheet
     if (this.assets) {
+      // Objects也用ts.png渲染！与tiles共用同一精灵图
       const objIndex = this.getObjectIndex(obj.type);
-      const objX = (objIndex % 8) * TILE_SIZE;
-      const objY = Math.floor(objIndex / 8) * TILE_SIZE;
+      const objX = (objIndex % 16) * TILE_SIZE;  // ts.png每行16个
+      const objY = Math.floor(objIndex / 16) * TILE_SIZE;
 
       ctx.drawImage(
-        this.assets.tileObjects,
+        this.assets.tiles,  // 用tiles精灵图，不是tileObjects
         objX, objY, TILE_SIZE, TILE_SIZE,
-        x * TILE_SIZE * SCALE, y * TILE_SIZE * SCALE,
-        TILE_SIZE * SCALE, TILE_SIZE * SCALE
+        px, py, TILE_SIZE * SCALE, TILE_SIZE * SCALE
       );
       return;
     }
 
-    // Fallback
+    // 备用渲染（无素材时）
     const colors: Record<ObjectType, string> = {
       'carrot': '#ff6b35',
       'seed': '#daa520',
@@ -503,44 +481,34 @@ export class Game {
     const color = colors[obj.type] || '#fff';
     ctx.fillStyle = color;
 
+    const centerX = px + (TILE_SIZE * SCALE) / 2;
+    const centerY = py + (TILE_SIZE * SCALE) / 2;
+
     switch (obj.type) {
       case 'carrot':
         ctx.beginPath();
-        ctx.moveTo(px, py - 6);
-        ctx.lineTo(px - 4, py + 4);
-        ctx.lineTo(px + 4, py + 4);
+        ctx.moveTo(centerX, centerY - 6);
+        ctx.lineTo(centerX - 4, centerY + 4);
+        ctx.lineTo(centerX + 4, centerY + 4);
         ctx.closePath();
         ctx.fill();
         break;
       case 'door':
-        ctx.fillRect(px - 6, py - 8, 12, 16);
+        ctx.fillRect(centerX - 6, centerY - 8, 12, 16);
         break;
       default:
         ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.arc(centerX, centerY, 5, 0, Math.PI * 2);
         ctx.fill();
     }
   }
 
-  private getObjectIndex(type: ObjectType): number {
-    const indices: Partial<Record<ObjectType, number>> = {
-      'start': 0,
-      'carrot': 8,
-      'door': 16,
-      'seed': 24,
-      'spring': 32,
-      'flight': 40,
-      'bonus': 48,
-      'rock': 56,
-      'mower': 64
-    };
-    return indices[type] ?? 0;
-  }
-
   private renderPlayer(ctx: CanvasRenderingContext2D): void {
-    if (!this.player || !this.assets) return;
+    if (!this.player || !this.assets) {
+      console.log('renderPlayer: no player or assets');
+      return;
+    }
 
-    // 选择正确的精灵图
     let sprites: HTMLImageElement[];
     switch (this.playerDirection) {
       case 'left':
@@ -556,16 +524,26 @@ export class Game {
         sprites = this.assets.bobbyDown;
     }
 
-    const sprite = sprites[0];
-    const frame = this.isMoving ? this.animFrame : 0;
+    if (!sprites || sprites.length === 0) {
+      console.log('renderPlayer: no sprites for direction', this.playerDirection);
+      return;
+    }
 
-    // 精灵图中每帧16像素宽，48像素高
+    const sprite = sprites[0];
+    if (!sprite || !sprite.complete) {
+      console.log('renderPlayer: sprite not ready', sprite?.complete);
+      return;
+    }
+
+    const frame = this.isMoving ? Math.min(this.animFrame, 7) : 0;
+
     const srcX = frame * PLAYER_WIDTH;
     const srcY = 0;
 
-    // 居中绘制玩家
-    const drawX = this.playerPixelX - (PLAYER_WIDTH * SCALE - TILE_SIZE * SCALE) / 2;
-    const drawY = this.playerPixelY - PLAYER_HEIGHT * SCALE + TILE_SIZE * SCALE;
+    const drawX = this.playerPixelX;
+    const drawY = this.playerPixelY;
+
+    console.log('renderPlayer: drawing at', drawX, drawY, 'frame', frame, 'srcX', srcX);
 
     ctx.drawImage(
       sprite,
@@ -575,5 +553,4 @@ export class Game {
   }
 }
 
-// 启动游戏
-new Game();
+(window as any).__game = new Game();

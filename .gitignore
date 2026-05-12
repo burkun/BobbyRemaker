@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# Temporary files
+*.log
+*.tmp
+.playwright-mcp/
+
+# Analysis temp images
+*.png
+!web-prototype/public/assets/sprites/*.png
+!web-prototype/public/assets/tiles/*.png
+!game/assets/resources/**/*.png

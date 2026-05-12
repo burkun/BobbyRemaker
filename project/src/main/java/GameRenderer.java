@@ -915,4 +915,381 @@ public class GameRenderer {
 
     public Image getImgBackground() { return imgBackground; }
     public void setImgBackground(Image img) { this.imgBackground = img; }
+
+    // ========================================
+    // Main Render Method
+    // ========================================
+
+    /**
+     * Main render method - renders the game based on current state.
+     * This is the entry point called from a.java Canvas.paint().
+     *
+     * @param g    J2ME Graphics context
+     * @param game BobbyGame instance containing game state
+     */
+    public void render(Graphics g, BobbyGame game) {
+        int state = game.getCurrentState();
+
+        // Clear screen
+        g.setColor(0);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        switch (state) {
+            case BobbyGame.STATE_TITLE:
+                renderTitleScreen(g, game);
+                break;
+
+            case BobbyGame.STATE_MENU:
+                renderMenuScreen(g, game);
+                break;
+
+            case BobbyGame.STATE_LOADING:
+                renderLoadingScreen(g, game);
+                break;
+
+            case BobbyGame.STATE_PLAYING:
+            case BobbyGame.STATE_PAUSED:
+                renderGameScreen(g, game);
+                break;
+
+            case BobbyGame.STATE_LEVEL_COMPLETE:
+                renderLevelCompleteScreen(g, game);
+                break;
+
+            case BobbyGame.STATE_GAME_OVER:
+                renderGameOverScreen(g, game);
+                break;
+
+            case BobbyGame.STATE_BONUS:
+                renderBonusScreen(g, game);
+                break;
+
+            case BobbyGame.STATE_FLYING:
+                renderFlyingScreen(g, game);
+                break;
+
+            case BobbyGame.STATE_SLEEP:
+                renderSleepScreen(g, game);
+                break;
+
+            default:
+                renderGameScreen(g, game);
+                break;
+        }
+
+        // Render transition effect if active
+        if (transitionEffect != 0) {
+            renderTransitionEffect(g);
+        }
+    }
+
+    /**
+     * Render title screen.
+     */
+    private void renderTitleScreen(Graphics g, BobbyGame game) {
+        if (imgLogo != null) {
+            int x = (screenWidth - imgLogo.getWidth()) / 2;
+            int y = (screenHeight - imgLogo.getHeight()) / 3;
+            g.drawImage(imgLogo, x, y, Graphics.TOP | Graphics.LEFT);
+        }
+
+        // Draw title text
+        if (imgTitle != null) {
+            int x = (screenWidth - imgTitle.getWidth()) / 2;
+            int y = screenHeight * 2 / 3;
+            g.drawImage(imgTitle, x, y, Graphics.TOP | Graphics.LEFT);
+        }
+    }
+
+    /**
+     * Render menu screen.
+     */
+    private void renderMenuScreen(Graphics g, BobbyGame game) {
+        MenuSystem menu = game.getMenuSystem();
+
+        // Draw background
+        g.setColor(0);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Draw menu items
+        int itemCount = menu.getCurrentMenu() == MenuSystem.MENU_MAIN ? 6 : 5;
+        for (int i = 0; i < itemCount; i++) {
+            String text = menu.getMenuItemText(menu.getCurrentMenu(), i);
+            if (text != null) {
+                int y = 50 + i * 25;
+                drawText(g, text, screenWidth / 2, y, true);
+            }
+        }
+    }
+
+    /**
+     * Render loading screen.
+     */
+    private void renderLoadingScreen(Graphics g, BobbyGame game) {
+        g.setColor(0);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        drawText(g, "LOADING...", screenWidth / 2, screenHeight / 2, true);
+    }
+
+    /**
+     * Render main game screen.
+     */
+    private void renderGameScreen(Graphics g, BobbyGame game) {
+        Player player = game.getPlayer();
+        LevelData level = game.getLevelData();
+        Camera cam = game.getCamera();
+        int camX = cam.getCameraX();
+        int camY = cam.getCameraY();
+
+        // Draw background/tile layer
+        drawTileLayer(g, camX, camY);
+
+        // Draw game world (tiles and objects)
+        renderGameWorld(g, game);
+
+        // Draw player sprite
+        drawPlayer(g, player, camX, camY);
+
+        // Draw HUD
+        renderHUD(g, 60000, game.getCarrotsCollected(), game.getScore(), true, false);
+
+        // Draw pause menu overlay if paused
+        if (game.getCurrentState() == BobbyGame.STATE_PAUSED) {
+            renderPauseOverlay(g, game);
+        }
+    }
+
+    /**
+     * Render game world (tiles and objects).
+     */
+    private void renderGameWorld(Graphics g, BobbyGame game) {
+        LevelData level = game.getLevelData();
+        Camera cam = game.getCamera();
+        int camX = cam.getCameraX();
+        int camY = cam.getCameraY();
+
+        int startX = camX / 32;
+        int startY = camY / 32;
+        int endX = startX + screenWidth / 32 + 2;
+        int endY = startY + screenHeight / 32 + 2;
+
+        for (int y = startY; y < endY && y < level.getMapHeight(); y++) {
+            for (int x = startX; x < endX && x < level.getMapWidth(); x++) {
+                byte tile = level.getTileAt(x, y);
+                byte obj = level.getObjectAt(x, y);
+
+                int screenX = x * 32 - camX;
+                int screenY = y * 32 - camY;
+
+                // Draw tile
+                if (imgTiles != null && tile != -1) {
+                    drawTile(g, tile, screenX, screenY);
+                }
+
+                // Draw object
+                if (imgSpritesheet != null && obj != -1) {
+                    drawObject(g, obj, screenX, screenY);
+                }
+            }
+        }
+    }
+
+    /**
+     * Draw a single tile.
+     */
+    private void drawTile(Graphics g, byte tile, int x, int y) {
+        if (imgTiles == null) return;
+
+        int tileValue = tile & 0xFF;
+        int srcX = (tileValue % 16) * 32;
+        int srcY = (tileValue / 16) * 32;
+
+        drawImageRegion(g, imgTiles, srcX, srcY, 32, 32, x, y);
+    }
+
+    /**
+     * Draw a single object.
+     */
+    private void drawObject(Graphics g, byte obj, int x, int y) {
+        if (imgSpritesheet == null) return;
+
+        int objValue = obj & 0xFF;
+        int srcX = (objValue % 16) * 32;
+        int srcY = (objValue / 16) * 32;
+
+        drawImageRegion(g, imgSpritesheet, srcX, srcY, 32, 32, x, y);
+    }
+
+    /**
+     * Draw player sprite.
+     */
+    private void drawPlayer(Graphics g, Player player, int camX, int camY) {
+        Image[] sprites = spriteImages;
+        if (sprites == null || sprites.length == 0) return;
+
+        int screenX = player.getPixelX() - camX;
+        int screenY = player.getPixelY() - camY;
+        int dir = player.getDirection();
+        int frame = player.getAnimFrame();
+
+        // Select sprite sheet based on state
+        int sheetIndex = 0;
+        if (player.isFlying()) {
+            sheetIndex = 8; // Flying sprite
+        } else if (player.isDying()) {
+            sheetIndex = 9; // Death sprite
+        } else {
+            sheetIndex = dir; // Direction-based sprite
+        }
+
+        if (sheetIndex < sprites.length && sprites[sheetIndex] != null) {
+            int srcX = frame * 32;
+            int srcY = 0;
+            drawImageRegion(g, sprites[sheetIndex], srcX, srcY, 32, 32, screenX, screenY);
+        }
+    }
+
+    /**
+     * Render pause overlay.
+     */
+    private void renderPauseOverlay(Graphics g, BobbyGame game) {
+        // Dim background
+        g.setColor(0x80000000);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Draw pause text
+        drawText(g, "PAUSED", screenWidth / 2, screenHeight / 3, true);
+    }
+
+    /**
+     * Render level complete screen.
+     */
+    private void renderLevelCompleteScreen(Graphics g, BobbyGame game) {
+        g.setColor(0);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        drawText(g, "LEVEL COMPLETE!", screenWidth / 2, screenHeight / 2 - 20, true);
+        drawText(g, "Carrots: " + game.getCarrotsCollected(), screenWidth / 2, screenHeight / 2 + 10, true);
+        drawText(g, "Score: " + game.getScore(), screenWidth / 2, screenHeight / 2 + 40, true);
+    }
+
+    /**
+     * Render game over screen.
+     */
+    private void renderGameOverScreen(Graphics g, BobbyGame game) {
+        g.setColor(0);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        drawText(g, "GAME OVER", screenWidth / 2, screenHeight / 2, true);
+    }
+
+    /**
+     * Render bonus level screen.
+     */
+    private void renderBonusScreen(Graphics g, BobbyGame game) {
+        SpecialLevelMode bonus = game.getSpecialLevelMode();
+
+        g.setColor(0);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Draw bonus items
+        byte[] types = bonus.getBonusItemTypes();
+        int[] xs = bonus.getBonusItemX();
+        int[] ys = bonus.getBonusItemY();
+
+        for (int i = 0; i < types.length; i++) {
+            if (types[i] < 8) {
+                drawBonusItem(g, types[i], xs[i], ys[i]);
+            }
+        }
+
+        drawText(g, "BONUS: " + bonus.getBonusCollected(), screenWidth / 2, 10, true);
+    }
+
+    /**
+     * Draw bonus item.
+     */
+    private void drawBonusItem(Graphics g, byte type, int x, int y) {
+        if (imgMisc != null) {
+            int srcX = (type % 5) * 12;
+            int srcY = (type / 5) * 12;
+            drawImageRegion(g, imgMisc, srcX, srcY, 12, 12, x, y);
+        }
+    }
+
+    /**
+     * Render flying level screen.
+     */
+    private void renderFlyingScreen(Graphics g, BobbyGame game) {
+        SpecialLevelMode flying = game.getSpecialLevelMode();
+
+        g.setColor(0);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        // Draw scrolling background
+        drawTileLayer(g, 0, 0);
+
+        // Draw player
+        drawPlayer(g, game.getPlayer(), 0, 0);
+
+        // Draw text overlay
+        String text = flying.getFlightText();
+        if (text != null && text.length() > 0) {
+            int fade = flying.getFlightFadeValue();
+            drawText(g, text, screenWidth / 2, screenHeight / 2, true);
+        }
+    }
+
+    /**
+     * Render sleep/password screen.
+     */
+    private void renderSleepScreen(Graphics g, BobbyGame game) {
+        SpecialLevelMode sleep = game.getSpecialLevelMode();
+
+        g.setColor(0);
+        g.fillRect(0, 0, screenWidth, screenHeight);
+
+        if (imgLogo != null) {
+            g.drawImage(imgLogo, (screenWidth - imgLogo.getWidth()) / 2, 20, Graphics.TOP | Graphics.LEFT);
+        }
+
+        // Draw password
+        String password = sleep.getSleepPassword();
+        if (password != null) {
+            drawText(g, password, screenWidth / 2, screenHeight / 2, true);
+        }
+
+        drawText(g, "Score: " + sleep.getPasswordScore(), screenWidth / 2, screenHeight - 30, true);
+    }
+
+    /**
+     * Draw text using font image.
+     */
+    private void drawText(Graphics g, String text, int x, int y, boolean centered) {
+        if (imgFont == null || text == null) {
+            // Fallback: use system font
+            g.setColor(0xFFFFFF);
+            if (centered) {
+                int width = text.length() * 8;
+                g.drawString(text, x - width / 2, y, Graphics.TOP | Graphics.LEFT);
+            } else {
+                g.drawString(text, x, y, Graphics.TOP | Graphics.LEFT);
+            }
+            return;
+        }
+
+        int textWidth = text.length() * 8;
+        int startX = centered ? x - textWidth / 2 : x;
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            int charIndex = c - 32;
+            if (charIndex >= 0 && charIndex < 96) {
+                int srcX = (charIndex % 16) * 8;
+                int srcY = (charIndex / 16) * 12;
+                drawImageRegion(g, imgFont, srcX, srcY, 8, 12, startX + i * 8, y);
+            }
+        }
+    }
 }

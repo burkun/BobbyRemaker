@@ -22,8 +22,8 @@
 
     #game-container {
       position: relative;
-      width: 320px;
-      height: 480px;
+      width: 640px;
+      height: 450px;
       background: #0a0a1a;
       border-radius: 8px;
       overflow: hidden;
@@ -137,14 +137,17 @@
 
     #canvas-container {
       flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: block;
       background: #0f0f1a;
+      overflow: auto;
+      width: 100%;
     }
 
     #gameCanvas {
       border: none;
+      width: 100%;
+      height: auto;
+      display: block;
     }
 
     #loading-screen {
